@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Metas</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#f2f2f2;
+padding:20px;
+}
+
+button{
+padding:8px 12px;
+margin:5px;
+border:none;
+border-radius:6px;
+background:#2f7df6;
+color:white;
+cursor:pointer;
+}
+
+.meta{
+background:white;
+padding:15px;
+border-radius:10px;
+margin-bottom:15px;
+}
+
+.meta-completa{
+height:35px;
+background:white;
+border-radius:10px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:5px 10px;
+margin-bottom:10px;
+}
+
+.progreso{
+width:100%;
+background:#ddd;
+height:15px;
+border-radius:10px;
+overflow:hidden;
+margin-top:8px;
+}
+
+.barra{
+height:100%;
+background:#4caf50;
+}
+
+.historial{
+background:white;
+padding:10px;
+border-radius:10px;
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Mis Metas</h2>
+
+<button onclick="agregarMeta()">Agregar Meta</button>
+
+<div id="metas"></div>
+
+<div class="historial">
+<h3>Historial</h3>
+<div id="historial"></div>
+</div>
+
+<script>
+
+let metas = [];
+let historial = [];
+let mostrarTodo = false;
+
+function guardarDatos(){
+localStorage.setItem("metas",JSON.stringify(metas));
+localStorage.setItem("historial",JSON.stringify(historial));
+}
+
+function cargarDatos(){
+
+let metasGuardadas = localStorage.getItem("metas");
+let historialGuardado = localStorage.getItem("historial");
+
+if(metasGuardadas){
+metas = JSON.parse(metasGuardadas);
+}
+
+if(historialGuardado){
+historial = JSON.parse(historialGuardado);
+}
+
+}
+
+function agregarMeta(){
+
+let nombre = prompt("Nombre de la meta");
+if(!nombre) return;
+
+let objetivo = Number(prompt("Cantidad objetivo"));
+
+metas.push({
+nombre:nombre,
+actual:0,
+objetivo:objetivo,
+completada:false
+});
+
+guardarDatos();
+renderMetas();
+
+}
+
+function agregarDinero(index){
+
+let cantidad = Number(prompt("Cantidad a agregar"));
+
+if(!cantidad) return;
+
+metas[index].actual += cantidad;
+
+historial.push(
+metas[index].nombre + " +" + cantidad
+);
+
+if(metas[index].actual >= metas[index].objetivo){
+metas[index].completada = true;
+}
+
+guardarDatos();
+renderMetas();
+renderHistorial();
+
+}
+
+function renderMetas(){
+
+let contenedor = document.getElementById("metas");
+contenedor.innerHTML = "";
+
+metas.forEach((meta,index)=>{
+
+if(meta.completada){
+
+let div = document.createElement("div");
+div.className="meta-completa";
+
+div.innerHTML=
+meta.nombre + " <span style='color:green'>✔</span>";
+
+contenedor.appendChild(div);
+
+}else{
+
+let porcentaje =
+(meta.actual/meta.objetivo)*100;
+
+let div = document.createElement("div");
+div.className="meta";
+
+div.innerHTML=`
+
+<b>${meta.nombre}</b><br>
+
+${meta.actual} / ${meta.objetivo}
+
+<div class="progreso">
+<div class="barra" style="width:${porcentaje}%"></div>
+</div>
+
+<button onclick="agregarDinero(${index})">
+Agregar
+</button>
+
+`;
+
+contenedor.appendChild(div);
+
+}
+
+});
+
+}
+
+function renderHistorial(){
+
+let contenedor = document.getElementById("historial");
+contenedor.innerHTML="";
+
+let lista =
+mostrarTodo
+? historial
+: historial.slice(-5);
+
+lista.forEach(item=>{
+
+let div = document.createElement("div");
+div.textContent=item;
+contenedor.appendChild(div);
+
+});
+
+if(historial.length>5 && !mostrarTodo){
+
+let btn = document.createElement("button");
+
+btn.textContent="Ver más";
+
+btn.onclick=()=>{
+
+mostrarTodo=true;
+renderHistorial();
+
+};
+
+contenedor.appendChild(btn);
+
+}
+
+}
+
+cargarDatos();
+renderMetas();
+renderHistorial();
+
+</script>
+
+</body>
+</html>
