@@ -1,305 +1,341 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react"
 
-type Movimiento = {
-  cantidad: number;
-  fecha: string;
-};
+export default function Home() {
 
-type Meta = {
-  id: number;
-  nombre: string;
-  objetivo: number;
-  ahorro: number;
-  historial: Movimiento[];
-  mostrarInput: boolean;
-  mostrarHistorial: boolean;
-  completada: boolean;
-};
+const [metas,setMetas] = useState<any[]>([])
+const [nombreMeta,setNombreMeta] = useState("")
+const [objetivo,setObjetivo] = useState("")
+const [mostrarForm,setMostrarForm] = useState(false)
+const [mostrarHistorial,setMostrarHistorial] = useState(false)
 
-export default function AppPage() {
-  const [metas, setMetas] = useState<Meta[]>([]);
-  const [nombreMeta, setNombreMeta] = useState("");
-  const [cantidadMeta, setCantidadMeta] = useState("");
-  const [nuevoValor, setNuevoValor] = useState<{ [key: number]: string }>({});
 
-  const agregarMeta = () => {
-    if (!nombreMeta || !cantidadMeta) return;
+// CARGAR DATOS GUARDADOS
+useEffect(()=>{
+const data = localStorage.getItem("metas")
+if(data){
+setMetas(JSON.parse(data))
+}
+},[])
 
-    const nueva: Meta = {
-      id: Date.now(),
-      nombre: nombreMeta,
-      objetivo: Number(cantidadMeta),
-      ahorro: 0,
-      historial: [],
-      mostrarInput: false,
-      mostrarHistorial: false,
-      completada: false,
-    };
 
-    setMetas([...metas, nueva]);
-    setNombreMeta("");
-    setCantidadMeta("");
-  };
+// GUARDAR DATOS
+useEffect(()=>{
+localStorage.setItem("metas",JSON.stringify(metas))
+},[metas])
 
-  const toggleInput = (id: number) => {
-    setMetas(
-      metas.map((m) =>
-        m.id === id ? { ...m, mostrarInput: !m.mostrarInput } : m
-      )
-    );
-  };
 
-  const agregarCantidad = (id: number) => {
-    const valor = Number(nuevoValor[id]);
-    if (!valor) return;
+// CREAR META
+function crearMeta(){
 
-    setMetas(
-      metas.map((m) => {
-        if (m.id !== id) return m;
+if(!nombreMeta || !objetivo) return
 
-        const nuevoAhorro = m.ahorro + valor;
-        const completada = nuevoAhorro >= m.objetivo;
+const nuevaMeta={
+id:Date.now(),
+nombre:nombreMeta,
+objetivo:Number(objetivo),
+ahorro:0,
+historial:[],
+input:""
+}
 
-        return {
-          ...m,
-          ahorro: nuevoAhorro,
-          completada,
-          historial: [
-            {
-              cantidad: valor,
-              fecha: new Date().toLocaleDateString(),
-            },
-            ...m.historial,
-          ],
-        };
-      })
-    );
+setMetas([...metas,nuevaMeta])
+setNombreMeta("")
+setObjetivo("")
+setMostrarForm(false)
 
-    setNuevoValor({ ...nuevoValor, [id]: "" });
-  };
+}
 
-  const eliminarMeta = (id: number) => {
-    setMetas(metas.filter((m) => m.id !== id));
-  };
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "30px",
-        background:
-          "linear-gradient(135deg, black 50%, #f59e0b 50%)",
-      }}
-    >
-      <h1 style={{ color: "white", marginBottom: "20px" }}>
-        Mis metas de ahorro
-      </h1>
+// AGREGAR DINERO
+function agregarDinero(id:number){
 
-      <div
-        style={{
-          background: "white",
-          padding: "15px",
-          borderRadius: "10px",
-          marginBottom: "20px",
-        }}
-      >
-        <h3 style={{ color: "black" }}>Nueva meta</h3>
+setMetas(metas.map(meta=>{
 
-        <input
-          placeholder="Nombre de la meta"
-          value={nombreMeta}
-          onChange={(e) => setNombreMeta(e.target.value)}
-          style={{ marginRight: "10px", color: "black" }}
-        />
+if(meta.id===id){
 
-        <input
-          placeholder="Cantidad objetivo"
-          type="number"
-          value={cantidadMeta}
-          onChange={(e) => setCantidadMeta(e.target.value)}
-          style={{ marginRight: "10px", color: "black" }}
-        />
+const valor = Number(meta.input)
 
-        <button
-          onClick={agregarMeta}
-          style={{
-            background: "#f59e0b",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: "6px",
-            color: "black",
-            fontWeight: "bold",
-          }}
-        >
-          Agregar meta
-        </button>
-      </div>
+if(!valor) return meta
 
-      {metas.map((meta) => {
-        const porcentaje = Math.min(
-          Math.round((meta.ahorro / meta.objetivo) * 100),
-          100
-        );
+const nuevoAhorro = meta.ahorro + valor
 
-        return (
-          <div
-            key={meta.id}
-            style={{
-              background: "white",
-              padding: "15px",
-              borderRadius: "10px",
-              marginBottom: "15px",
-            }}
-          >
-            <h3 style={{ color: "black" }}>{meta.nombre}</h3>
+return{
+...meta,
+ahorro:nuevoAhorro,
+historial:[valor,...meta.historial],
+input:""
+}
 
-            <p style={{ color: "black" }}>
-              ${meta.ahorro} / ${meta.objetivo}
-            </p>
+}
 
-            <div
-              style={{
-                width: "100%",
-                height: "20px",
-                background: "#e5e7eb",
-                borderRadius: "10px",
-                overflow: "hidden",
-                marginBottom: "5px",
-              }}
-            >
-              <div
-                style={{
-                  width: `${porcentaje}%`,
-                  height: "100%",
-                  background: "#10b981",
-                  transition: "width 0.6s ease",
-                }}
-              />
-            </div>
+return meta
 
-            {/* PORCENTAJE CAMBIADO A VERDE OSCURO */}
-            <p
-              style={{
-                fontWeight: "bold",
-                color: "#065f46",
-              }}
-            >
-              {porcentaje}%
-            </p>
+}))
 
-            {!meta.completada && (
-              <>
-                <button
-                  onClick={() => toggleInput(meta.id)}
-                  style={{
-                    background: "#f59e0b",
-                    border: "none",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    color: "black",
-                    marginRight: "10px",
-                  }}
-                >
-                  +
-                </button>
+}
 
-                {meta.mostrarInput && (
-                  <div style={{ marginTop: "10px" }}>
-                    <input
-                      type="number"
-                      placeholder="Cantidad"
-                      value={nuevoValor[meta.id] || ""}
-                      onChange={(e) =>
-                        setNuevoValor({
-                          ...nuevoValor,
-                          [meta.id]: e.target.value,
-                        })
-                      }
-                      style={{
-                        marginRight: "10px",
-                        color: "black",
-                      }}
-                    />
 
-                    <button
-                      onClick={() => agregarCantidad(meta.id)}
-                      style={{
-                        background: "#f59e0b",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        color: "black",
-                      }}
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+// ACTUALIZAR INPUT
+function actualizarInput(id:number,valor:string){
 
-            {meta.completada && (
-              <div style={{ marginTop: "10px" }}>
-                <span style={{ color: "green", fontWeight: "bold" }}>
-                  ✔ Meta completada
-                </span>
+setMetas(metas.map(meta=>{
 
-                <button
-                  onClick={() => eliminarMeta(meta.id)}
-                  style={{
-                    marginLeft: "15px",
-                    background: "red",
-                    border: "none",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    color: "white",
-                  }}
-                >
-                  Eliminar
-                </button>
-              </div>
-            )}
+if(meta.id===id){
+return {...meta,input:valor}
+}
 
-            {meta.historial.length > 0 && (
-              <div style={{ marginTop: "10px" }}>
-                <button
-                  onClick={() =>
-                    setMetas(
-                      metas.map((m) =>
-                        m.id === meta.id
-                          ? {
-                              ...m,
-                              mostrarHistorial: !m.mostrarHistorial,
-                            }
-                          : m
-                      )
-                    )
-                  }
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "black",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                >
-                  {meta.mostrarHistorial ? "Ver menos" : "Ver más"}
-                </button>
+return meta
 
-                {meta.mostrarHistorial &&
-                  meta.historial.map((h, i) => (
-                    <div key={i} style={{ color: "black" }}>
-                      {h.cantidad > 0 ? "+" : ""}
-                      {h.cantidad}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+}))
+
+}
+
+
+// ELIMINAR META
+function eliminarMeta(id:number){
+
+setMetas(metas.filter(meta=>meta.id!==id))
+
+}
+
+
+return (
+
+<div style={{
+minHeight:"100vh",
+background:"linear-gradient(135deg,#000 50%,#c79b00 50%)",
+padding:"40px",
+fontFamily:"sans-serif"
+}}>
+
+
+<h1 style={{
+color:"#c79b00",
+fontSize:"32px",
+marginBottom:"30px"
+}}>
+Meta de ahorro
+</h1>
+
+
+<button onClick={()=>setMostrarForm(!mostrarForm)} style={{
+background:"#c79b00",
+border:"none",
+padding:"10px 20px",
+marginBottom:"20px",
+cursor:"pointer"
+}}>
++ Nueva meta
+</button>
+
+
+{mostrarForm && (
+
+<div style={{marginBottom:"30px"}}>
+
+<input
+placeholder="Nombre de meta"
+value={nombreMeta}
+onChange={e=>setNombreMeta(e.target.value)}
+style={{
+padding:"10px",
+marginRight:"10px",
+color:"black",
+background:"white",
+border:"1px solid #ccc"
+}}
+/>
+
+<input
+placeholder="Cantidad objetivo"
+value={objetivo}
+onChange={e=>setObjetivo(e.target.value)}
+style={{
+padding:"10px",
+marginRight:"10px",
+color:"black",
+background:"white",
+border:"1px solid #ccc"
+}}
+/>
+
+<button onClick={crearMeta} style={{
+background:"#c79b00",
+border:"none",
+padding:"10px 20px"
+}}>
+Agregar meta
+</button>
+
+</div>
+
+)}
+
+
+
+{metas.map(meta=>{
+
+const progreso = Math.min((meta.ahorro/meta.objetivo)*100,100)
+
+return(
+
+<div key={meta.id} style={{
+background:"white",
+padding:"25px",
+marginBottom:"25px",
+borderRadius:"10px"
+}}>
+
+
+<h2 style={{color:"black"}}>
+{meta.nombre}
+</h2>
+
+
+<div style={{
+display:"flex",
+alignItems:"center",
+gap:"40px"
+}}>
+
+
+{/* CIRCULO */}
+
+<div style={{
+width:"120px",
+height:"120px",
+borderRadius:"50%",
+background:`conic-gradient(#1db954 ${progreso}%, #ccc ${progreso}%)`,
+display:"flex",
+alignItems:"center",
+justifyContent:"center",
+fontWeight:"bold",
+color:"black"
+}}>
+
+{Math.round(progreso)}%
+
+</div>
+
+
+<div>
+
+<p style={{color:"black"}}>
+Ahorro: <b>${meta.ahorro}</b>
+</p>
+
+<p style={{color:"black"}}>
+Meta: <b>${meta.objetivo}</b>
+</p>
+
+
+{progreso < 100 ? (
+
+<div>
+
+<input
+placeholder="Cantidad"
+value={meta.input}
+onChange={e=>actualizarInput(meta.id,e.target.value)}
+style={{
+padding:"8px",
+color:"black",
+background:"white",
+border:"1px solid #ccc"
+}}
+/>
+
+<button
+onClick={()=>agregarDinero(meta.id)}
+style={{
+background:"#c79b00",
+border:"none",
+padding:"8px 15px",
+marginLeft:"10px"
+}}
+>
+Agregar
+</button>
+
+</div>
+
+):(
+
+<button
+onClick={()=>eliminarMeta(meta.id)}
+style={{
+background:"green",
+color:"white",
+border:"none",
+padding:"10px 20px"
+}}
+>
+
+Meta completada ✓ (Eliminar)
+
+</button>
+
+)}
+
+</div>
+
+</div>
+
+
+
+{/* HISTORIAL */}
+
+<div style={{marginTop:"20px"}}>
+
+<h3 style={{color:"black"}}>Historial</h3>
+
+{meta.historial
+.slice(0,mostrarHistorial ? meta.historial.length : 5)
+.map((h:any,i:number)=>{
+
+const color = h>=0 ? "green" : "red"
+
+return(
+
+<div key={i} style={{color}}>
+{h>=0?"+":""}{h}
+
+</div>
+
+)
+
+})}
+
+{meta.historial.length>5 &&(
+
+<button
+onClick={()=>setMostrarHistorial(!mostrarHistorial)}
+style={{
+marginTop:"10px",
+background:"transparent",
+border:"none",
+cursor:"pointer"
+}}
+>
+
+{mostrarHistorial ? "Ver menos" : "Ver más"}
+
+</button>
+
+)}
+
+</div>
+
+</div>
+
+)
+
+})}
+
+</div>
+
+)
+
 }
